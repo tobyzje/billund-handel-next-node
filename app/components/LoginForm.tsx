@@ -11,15 +11,48 @@ import {
   CardTitle 
 } from "@/components/ui/card"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
+  const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Implementer login logik her
-    console.log("Login attempt:", { email, password })
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Forkert email eller adgangskode")
+      }
+
+      toast({
+        title: "Velkommen tilbage!",
+        description: "Du er nu logget ind.",
+      })
+
+      router.push("/account") // Redirect til brugerens profil
+      router.refresh() // Opdater navigation state
+
+    } catch (error) {
+      toast({
+        title: "Fejl ved login",
+        description: error instanceof Error ? error.message : "Der skete en fejl. Prøv igen senere.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -39,6 +72,8 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full"
+              disabled={isLoading}
+              required
             />
           </div>
           <div className="space-y-2">
@@ -48,6 +83,8 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full"
+              disabled={isLoading}
+              required
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -58,8 +95,8 @@ export default function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full">
-            Log ind
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Logger ind..." : "Log ind"}
           </Button>
           <div className="relative w-full">
             <div className="absolute inset-0 flex items-center">
@@ -72,10 +109,10 @@ export default function LoginForm() {
             </div>
           </div>
           <div className="grid gap-2 w-full">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={() => router.push("/account/register")}>
               Opret ny konto
             </Button>
-            <Button variant="link" className="text-sm text-blue-500">
+            <Button variant="link" className="text-sm text-blue-500" onClick={() => router.push("/account/reset-password")}>
               Glemt adgangskode?
             </Button>
           </div>

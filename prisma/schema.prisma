@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model GiftCard {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  amount         Int
+  status         String   @default("pending") // pending, processed, sent, cancelled
+  buyerName      String
+  buyerEmail     String
+  buyerPhone     String?
+  recipientName  String
+  recipientEmail String
+  message        String?
+}
+
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]  // Relation til events
+}
+
+model Event {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  title         String
+  description   String   @db.Text
+  date          DateTime
+  time          String
+  location      String
+  imageUrl      String?
+  imageData     Bytes?
+  maxSeats      Int?
+  price         Float?
+  cityId        String?  // Optional relation til by
+  city          City?    @relation(fields: [cityId], references: [id])
+  
+  registrations Registration[]
+  status        String   @default("upcoming")
+
+  @@index([cityId])
+}
+
+model Registration {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Deltager information
+  name            String
+  email           String
+  phone           String?
+  company         String?
+  
+  // Relations
+  event           Event     @relation(fields: [eventId], references: [id])
+  eventId         String
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  
+  // Status
+  status          String    @default("pending") // pending, confirmed, cancelled, waitlist
+  
+  // Betalings information
+  paymentDate     DateTime?
+  paymentReference String?
+
+  @@index([eventId])
+  @@index([userId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String   // Hashed password
+  role      Role     @default(USER)
+  
+  // Relations
+  registrations Registration[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}

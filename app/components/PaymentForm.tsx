@@ -1,165 +1,188 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
-interface PaymentFormProps {
-  amount: number
-  description: string
+const formSchema = z.object({
+  cardNumber: z.string().min(16, "Ugyldigt kortnummer"),
+  expiryDate: z.string().min(5, "Ugyldig udløbsdato"),
+  cvv: z.string().min(3, "Ugyldig CVV"),
+  cardholderName: z.string().min(2, "Indtast kortholder navn"),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
+const defaultValues: FormValues = {
+  cardNumber: "",
+  expiryDate: "",
+  cvv: "",
+  cardholderName: ""
 }
 
-export default function PaymentForm({ amount, description }: PaymentFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
+interface PaymentFormProps {
+  registrationId: string
+  amount: number
+}
+
+export function PaymentForm({ registrationId, amount }: PaymentFormProps) {
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    cvr: "",
-    address: "",
-    city: "",
-    zipCode: "",
+  const router = useRouter()
+  
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+    mode: "onChange"
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
+  const onSubmit = async (data: FormValues) => {
     try {
-      const response = await fetch("/api/submit-membership", {
+      setLoading(true)
+      
+      const response = await fetch("/api/payments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationId,
+          amount,
+          ...data
+        }),
       })
 
       if (!response.ok) {
-        throw new Error("Kunne ikke sende anmodning")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Betalingsfejl")
       }
 
       toast({
-        title: "Anmodning modtaget",
-        description: "Vi har modtaget din medlemsanmodning og vender tilbage hurtigst muligt.",
+        title: "Betaling gennemført!",
+        description: "Din tilmelding er nu bekræftet",
       })
 
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        cvr: "",
-        address: "",
-        city: "",
-        zipCode: "",
-      })
-
+      router.push("/profile/events")
     } catch (error) {
       toast({
         title: "Fejl",
-        description: "Der skete en fejl. Prøv igen senere.",
+        description: error instanceof Error ? error.message : "Kunne ikke gennemføre betalingen",
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Medlemskab af Billund Handelsforening</CardTitle>
-        <CardDescription>Udfyld venligst dine oplysninger for at ansøge om medlemskab</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Kontaktperson</label>
-              <Input
-                required
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Fulde navn"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                required
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="firma@email.dk"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Virksomhed</label>
-              <Input
-                required
-                value={formData.company}
-                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                placeholder="Firmanavn"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">CVR-nummer</label>
-              <Input
-                required
-                value={formData.cvr}
-                onChange={(e) => setFormData(prev => ({ ...prev, cvr: e.target.value }))}
-                placeholder="12345678"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Adresse</label>
-              <Input
-                required
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Gade og husnummer"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">By</label>
-              <Input
-                required
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                placeholder="Billund"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Postnummer</label>
-              <Input
-                required
-                value={formData.zipCode}
-                onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
-                placeholder="7190"
-              />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading}
-          >
-            {isLoading ? "Sender..." : "Send medlemsanmodning"}
-          </Button>
-        </CardFooter>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="cardNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Kortnummer</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field}
+                  placeholder="1234 5678 9012 3456"
+                  maxLength={16}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="expiryDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Udløbsdato</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field}
+                    placeholder="MM/YY"
+                    maxLength={5}
+                    value={field.value}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, '')
+                      if (value.length > 2) {
+                        value = value.slice(0, 2) + '/' + value.slice(2)
+                      }
+                      field.onChange(value)
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cvv"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CVV</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field}
+                    type="password"
+                    placeholder="123"
+                    maxLength={4}
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="cardholderName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Kortholder</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field}
+                  placeholder="Navn på kort"
+                  value={field.value}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loading}
+        >
+          {loading ? "Behandler..." : `Betal ${amount} kr`}
+        </Button>
       </form>
-    </Card>
+    </Form>
   )
-} 
+}

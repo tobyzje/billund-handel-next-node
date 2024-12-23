@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -17,22 +19,18 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Mail, Download, Trash } from "lucide-react"
-import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 
-// Dette skal erstattes med data fra din database
-const dummyData = [
-  {
-    id: "GC-001",
-    date: "2024-03-20",
-    amount: 500,
-    status: "pending",
-    buyerName: "John Doe",
-    buyerEmail: "john@example.com",
-    recipientName: "Jane Doe",
-    recipientEmail: "jane@example.com"
-  },
-  // Tilføj flere eksempler...
-]
+interface GiftCard {
+  id: string
+  createdAt: string
+  amount: number
+  status: string
+  buyerName: string
+  buyerEmail: string
+  recipientName: string
+  recipientEmail: string
+}
 
 type Status = "pending" | "processed" | "sent" | "cancelled"
 
@@ -56,7 +54,30 @@ const statusStyles: Record<Status, { label: string, className: string }> = {
 }
 
 export function GiftCardTable() {
-  const [giftCards, setGiftCards] = useState(dummyData)
+  const [giftCards, setGiftCards] = useState<GiftCard[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    fetchGiftCards()
+  }, [])
+
+  const fetchGiftCards = async () => {
+    try {
+      const response = await fetch('/api/admin/giftcards')
+      if (!response.ok) throw new Error('Kunne ikke hente gavekort')
+      const data = await response.json()
+      setGiftCards(data)
+    } catch (error) {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke hente gavekort",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSendEmail = (id: string) => {
     console.log("Send email for:", id)
@@ -66,8 +87,25 @@ export function GiftCardTable() {
     console.log("Download gift card:", id)
   }
 
-  const handleDelete = (id: string) => {
-    console.log("Delete gift card:", id)
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/giftcards/${id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error('Kunne ikke slette gavekort')
+      
+      await fetchGiftCards() // Genindlæs data
+      toast({
+        title: "Success",
+        description: "Gavekort blev slettet",
+      })
+    } catch (error) {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke slette gavekort",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -88,7 +126,7 @@ export function GiftCardTable() {
           {giftCards.map((giftCard) => (
             <TableRow key={giftCard.id}>
               <TableCell>{giftCard.id}</TableCell>
-              <TableCell>{new Date(giftCard.date).toLocaleDateString('da-DK')}</TableCell>
+              <TableCell>{new Date(giftCard.createdAt).toLocaleDateString('da-DK')}</TableCell>
               <TableCell>{giftCard.amount} kr</TableCell>
               <TableCell>
                 <Badge className={statusStyles[giftCard.status as Status].className}>

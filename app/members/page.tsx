@@ -1,6 +1,8 @@
 import PricingCard from "../components/PricingCard"
-import { MapPin, Phone, Mail, Building2 } from "lucide-react"
+import { MapPin, Phone, Mail } from "lucide-react"
 import Sport24Logo from "@/public/sport24-logo.png"
+import BillundCafeLogo from "@/public/billund-bageri-logo.png"
+import Image from 'next/image'
 
 
 export default function MembersPage() {
@@ -12,10 +14,19 @@ export default function MembersPage() {
       name: "Sport24 - Billund",
       description: "Sport24 er en butik der sælger sportsudstyr til både amatører og professionelle. Vi har alt fra fodbold til håndbold, og vi har altid høj kvalitet til en god pris.",
       address: "Gammelbro 38, 7190 Billund",
-      phone: "12345678", 
+      phone: "23 81 44 47", 
       email: "vsp@sport24.dk",
       logo: Sport24Logo.src
     },
+    {
+        id: 2,
+        name: "Billund Café & Bageri",
+        description: "Billund Café & Bageri er en lokal butik der sælger kaffe, snacks og brød til både lokale og gæster. Vi har altid høj kvalitet til en god pris.",
+        address: "Hovedgaden 20, 7190 Billund",
+        phone: "75 33 10 28", 
+        email: "mail@billundbageri.dk",
+        logo: BillundCafeLogo.src
+      },
   ]
 
   return (
@@ -28,11 +39,11 @@ export default function MembersPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {members.map(member => (
-            <div key={member.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div key={member.id} className="bg-white hover:scale-105 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="p-6">
                 {member.logo && (
                   <div className="flex justify-center mb-6">
-                    <img 
+                    <Image 
                       src={member.logo}
                       alt={`${member.name} logo`}
                       width={120}

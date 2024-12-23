@@ -1,4 +1,4 @@
-import PriceingCard from "@/app/components/PriceingCard";
+import PriceingCard from "@/app/components/PricingCard";
 
 export default function Priser() {
   return (

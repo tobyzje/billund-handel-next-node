@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from 'react'
-import PaymentForm from './PaymentForm'
 import { Button } from "@/components/ui/button"
 import { 
   Card, 
@@ -24,9 +23,6 @@ const membershipFeatures = [
 export default function PricingCard() {
   const [showForm, setShowForm] = useState(false)
 
-  if (showForm) {
-    return <PaymentForm amount={2400} description="Årligt medlemskab" />
-  }
 
   return (
     <div className="flex justify-center">

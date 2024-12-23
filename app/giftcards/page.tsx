@@ -1,4 +1,5 @@
 import GiftCardForm from "../components/GiftCardForm"
+import { Card } from "@/components/ui/card"
 
 export default function GiftCardsPage() {
   return (
@@ -11,7 +12,9 @@ export default function GiftCardsPage() {
           </p>
         </div>
         
-        <GiftCardForm />
+        <div className="max-w-4xl mx-auto">
+          <GiftCardForm />
+        </div>
       </div>
     </main>
   )
